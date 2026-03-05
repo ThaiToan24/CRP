@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+.env
+*.log
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+dist/
+build/
+*.min.css
+*.min.js
+uploads/*
+!uploads/.gitkeep

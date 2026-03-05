@@ -1,0 +1,5 @@
+# Simplified htaccess: ensure index.php is used and avoid automatic redirects
+DirectoryIndex index.php
+
+# Original rewrite rules removed to prevent redirect-related 404s.
+# If you need to route all requests into /public/, enable rewrites again.

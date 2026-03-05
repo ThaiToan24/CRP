@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Debug - DB-ecommerce</title></head>
+<body>
+<h1>Debug: static file served</h1>
+<p>If you see this page at <strong>/DB-ecommerce/debug.html</strong>, Apache is serving static files from the project folder.</p>
+<ul>
+<li>Request URI: <?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'n/a'); ?></li>
+<li>Document root: <?php echo htmlspecialchars($_SERVER['DOCUMENT_ROOT'] ?? 'n/a'); ?></li>
+</ul>
+</body>
+</html>
