@@ -55,9 +55,9 @@ $uploadUrl = UPLOAD_URL;
 
 <?php if (isset($_SESSION['login_location_alert'])): ?>
     <div id="login-alert" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 fixed top-4 right-4 z-[9999] shadow-lg rounded cursor-pointer" role="alert" onclick="this.style.display='none'">
-        <p class="font-bold">Đăng nhập thành công!</p>
-        <p>Vị trí nhận diện: <?php echo htmlspecialchars($_SESSION['login_location_alert']); ?></p>
-        <p class="text-xs text-green-600 mt-1 italic">Click để đóng</p>
+        <p class="font-bold">Login successful!</p>
+        <p class="mt-1 text-sm"><?php echo $_SESSION['login_location_alert']; ?></p>
+        <p class="text-xs text-green-600 mt-2 italic">Click to close</p>
     </div>
     <?php unset($_SESSION['login_location_alert']); ?>
     <script>
@@ -68,6 +68,28 @@ $uploadUrl = UPLOAD_URL;
     </script>
 <?php endif; ?>
 
+<?php if (isset($_SESSION['anomaly_alert'])): ?>
+    <div id="anomaly-alert" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 fixed top-28 right-4 z-[9999] shadow-lg rounded cursor-pointer max-w-md" role="alert" onclick="this.style.display='none'">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <span class="text-2xl">🚨</span>
+            </div>
+            <div class="ml-3">
+                <p class="font-bold">Security Alert!</p>
+                <p class="mt-1 text-sm"><?php echo nl2br(htmlspecialchars($_SESSION['anomaly_alert'])); ?></p>
+                <p class="text-xs text-red-600 mt-2 italic">Click to close</p>
+            </div>
+        </div>
+    </div>
+    <?php unset($_SESSION['anomaly_alert']); ?>
+    <script>
+        setTimeout(function() {
+            var alert = document.getElementById('anomaly-alert');
+            if (alert) alert.style.display = 'none';
+        }, 15000);
+    </script>
+<?php endif; ?>
+
 <header>
     <div class="header-container">
         <a href="<?php echo $baseUrl; ?>" class="logo">DB eCommerce</a>
@@ -75,32 +97,10 @@ $uploadUrl = UPLOAD_URL;
         <nav>
             <a href="<?php echo $baseUrl; ?>/pages/home.php">Home</a>
             
-            <!-- Categories Dropdown (only for customer) -->
-            <?php if ($userRole === 'customer'): ?>
-            <div class="relative group">
-                <button class="flex items-center gap-1 hover:text-primary">
-                    Categories
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-                
-                <div class="absolute left-0 mt-0 w-48 bg-white rounded-lg shadow-xl invisible group-hover:visible transition-all duration-200 z-50">
-                    <!-- Categories will be loaded here -->
-                </div>
-            </div>
-            <?php endif; ?>
-            
             <a href="<?php echo $baseUrl; ?>/pages/products.php">Products</a>
             
             <!-- Role-specific navigation -->
             <?php if ($isLoggedIn): ?>
-                <!-- Cart link for all roles -->
-                <a href="<?php echo $baseUrl; ?>/pages/cart.php" class="relative">
-                    Cart
-                    <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">0</span>
-                </a>
-                
                 <?php if ($userRole === 'customer'): ?>
                     <a href="<?php echo $baseUrl; ?>/pages/orders.php">Orders</a>
                     <a href="<?php echo $baseUrl; ?>/pages/wishlist.php">Wishlist</a>
@@ -140,7 +140,24 @@ $uploadUrl = UPLOAD_URL;
             <a href="<?php echo $baseUrl; ?>/pages/contact.php">Contact</a>
         </nav>
         
-        <div class="user-menu">
+        <div class="user-menu flex items-center gap-3">
+            <?php if ($userRole === 'customer'): ?>
+                <a href="<?php echo $baseUrl; ?>/pages/cart.php" class="relative inline-flex items-center px-2 py-1 hover:bg-gray-100 rounded">
+                    <span class="text-xl">🛒</span>
+                    <span id="cart-count" class="absolute -top-2 -right-3 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">0</span>
+                </a>
+            <?php elseif ($userRole !== null): ?>
+                <a href="<?php echo $baseUrl; ?>/pages/cart.php" class="relative inline-flex items-center px-2 py-1 hover:bg-gray-100 rounded">
+                    <span class="text-xl">🛒</span>
+                    <span id="cart-count" class="absolute -top-2 -right-3 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">0</span>
+                </a>
+            <?php else: ?>
+                <a href="<?php echo $baseUrl; ?>/auth/login.php" class="relative inline-flex items-center px-2 py-1 hover:bg-gray-100 rounded">
+                    <span class="text-xl">🛒</span>
+                    <span id="cart-count" class="absolute -top-2 -right-3 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">0</span>
+                </a>
+            <?php endif; ?>
+
             <?php if ($isLoggedIn): ?>
                 <div class="relative group">
                     <button class="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded">

@@ -99,32 +99,17 @@ $pageTitle = htmlspecialchars($product['name']) . ' - DB eCommerce';
             <div class="bg-gray-100 p-3 rounded mb-4">
                 <p><strong>In Stock:</strong> <?php echo $product['stock']; ?> items</p>
                 <p><strong>Seller:</strong> <?php echo htmlspecialchars($product['seller_name'] ?? 'Unknown'); ?></p>
-                <p><strong>Category:</strong> <?php echo htmlspecialchars($product['category_name']); ?></p>
-            </div>
-            
-            <div class="mb-6">
-                <label for="quantity" class="block font-semibold mb-2">Quantity:</label>
-                <div class="flex items-center gap-2">
-                    <button onclick="document.getElementById('quantity').value = Math.max(1, parseInt(document.getElementById('quantity').value) - 1)" class="btn btn-outline w-10 h-10 p-0">-</button>
-                    <input type="number" id="quantity" value="1" min="1" max="<?php echo $product['stock']; ?>" class="w-16 text-center border rounded">
-                    <button onclick="document.getElementById('quantity').value = Math.min(<?php echo $product['stock']; ?>, parseInt(document.getElementById('quantity').value) + 1)" class="btn btn-outline w-10 h-10 p-0">+</button>
-                </div>
+                <p><strong>Category:</strong> <?php echo htmlspecialchars($product['category_name'] ?? 'Uncategorized'); ?></p>
             </div>
             
             <div class="flex gap-3 mb-6">
-                <button onclick="addToCart(<?php echo $product['id']; ?>, parseInt(document.getElementById('quantity').value))" class="btn btn-primary flex-1 py-3">
-                    Add to Cart
+                <button onclick="addToCart(<?php echo $product['id']; ?>, 1, true)" class="btn btn-primary flex-1 py-3">
+                    🛒 Buy Now
                 </button>
                 <button onclick="addToWishlist(<?php echo $product['id']; ?>)" class="btn btn-outline flex-1 py-3">
                     Add to Wishlist
                 </button>
             </div>
-            
-            <?php if ($auth->isLoggedIn() && $auth->hasRole('customer')): ?>
-                <button class="btn btn-secondary w-full py-3" onclick="console.log('Order now')">
-                    Order Now
-                </button>
-            <?php endif; ?>
             
             <div class="mt-6 pt-6 border-t">
                 <h3 class="font-bold mb-2">Description</h3>

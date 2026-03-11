@@ -64,8 +64,8 @@ $pageTitle = 'My Wishlist - DB eCommerce';
                             By <?php echo htmlspecialchars($item['seller_name']); ?>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="addToCart(<?php echo $item['product_id']; ?>)" class="btn btn-primary flex-1 text-sm">
-                                Add to Cart
+                            <button onclick="addToCart(<?php echo $item['product_id']; ?>, 1, true)" class="btn btn-primary flex-1 text-sm">
+                                Buy Now
                             </button>
                             <button onclick="removeFromWishlist(<?php echo $item['id']; ?>)" class="btn btn-outline flex-1 text-sm text-red-600">
                                 Remove

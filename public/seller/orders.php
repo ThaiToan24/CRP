@@ -26,6 +26,26 @@ $stmt->bind_param("i", $sellerId);
 $stmt->execute();
 $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
+// Handle inline status update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
+    $orderId = $_POST['order_id'] ?? null;
+    $newStatus = $_POST['status'] ?? null;
+    $validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+    
+    // Verify order belongs to this seller
+    $checkStmt = $db->prepare("SELECT id FROM orders WHERE id = ? AND seller_id = ?");
+    $checkStmt->bind_param("ii", $orderId, $sellerId);
+    $checkStmt->execute();
+    
+    if ($checkStmt->get_result()->num_rows > 0 && in_array($newStatus, $validStatuses)) {
+        $updateStmt = $db->prepare("UPDATE orders SET status = ? WHERE id = ?");
+        $updateStmt->bind_param("si", $newStatus, $orderId);
+        if ($updateStmt->execute()) {
+            redirect('seller/orders.php?success=1');
+        }
+    }
+}
+
 $pageTitle = 'My Orders - DB eCommerce Seller';
 // baseUrl available via header constant
 ?>
@@ -64,7 +84,20 @@ $pageTitle = 'My Orders - DB eCommerce Seller';
                             ?>"><?php echo ucfirst($order['status']); ?></span></td>
                             <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>
                             <td>
-                                <a href="<?php echo $baseUrl; ?>/pages/order-detail.php?id=<?php echo $order['id']; ?>" class="btn btn-outline text-sm">View</a>
+                                <div class="flex items-center gap-2">
+                                    <form method="POST" action="" class="flex items-center gap-1 m-0">
+                                        <input type="hidden" name="action" value="update_status">
+                                        <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
+                                        <select name="status" class="border rounded px-2 py-1 text-sm bg-gray-50 h-8" onchange="this.form.submit()">
+                                            <option value="pending" <?php echo $order['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                            <option value="confirmed" <?php echo $order['status'] === 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>
+                                            <option value="shipped" <?php echo $order['status'] === 'shipped' ? 'selected' : ''; ?>>Shipped</option>
+                                            <option value="delivered" <?php echo $order['status'] === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
+                                            <option value="cancelled" <?php echo $order['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                                        </select>
+                                    </form>
+                                    <a href="<?php echo $baseUrl; ?>/pages/order-detail.php?id=<?php echo $order['id']; ?>" class="btn btn-outline text-sm py-1 px-3 h-8 flex items-center">View</a>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

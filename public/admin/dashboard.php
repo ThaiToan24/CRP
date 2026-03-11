@@ -471,6 +471,58 @@ $pageTitle = 'Admin Dashboard - DB eCommerce';
                 </tbody>
             </table>
         </div>
+    <!-- AI Anomaly Detection Alerts -->
+    <div class="mt-8 bg-red-50 border-l-4 border-red-500 rounded-lg p-6 shadow">
+        <h3 class="font-bold text-lg text-red-700 mb-4">🚨 AI Suspicious Login Alerts</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left bg-white">
+                <thead>
+                    <tr class="bg-red-100 border-b border-red-200">
+                        <th class="p-4 rounded-tl-lg font-semibold text-red-800">User</th>
+                        <th class="p-4 font-semibold text-red-800">Device / IP</th>
+                        <th class="p-4 font-semibold text-red-800">Time / Location</th>
+                        <th class="p-4 rounded-tr-lg font-semibold text-red-800">Anomaly Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $sqlAnomaly = 
+                        "SELECT lf.*, u.name, u.email FROM login_fingerprints lf " .
+                        "JOIN users u ON lf.user_id = u.id " .
+                        "WHERE lf.is_anomaly = 1 " .
+                        "ORDER BY lf.login_time DESC LIMIT 10";
+                    $anomalies = $db->query($sqlAnomaly);
+                    if ($anomalies && $anomalies->num_rows > 0):
+                        while($row = $anomalies->fetch_assoc()):
+                    ?>
+                    <tr class="border-b border-red-100">
+                        <td class="p-4">
+                            <span class="font-semibold text-gray-800"><?php echo htmlspecialchars($row['name']); ?></span><br>
+                            <span class="text-sm text-gray-600"><?php echo htmlspecialchars($row['email']); ?></span>
+                        </td>
+                        <td class="p-4">
+                            <span class="font-mono text-sm block"><?php echo htmlspecialchars($row['ip_address']); ?></span>
+                            <span class="text-xs text-gray-500" title="<?php echo htmlspecialchars($row['user_agent']); ?>"><?php echo htmlspecialchars($row['device_type']); ?></span>
+                        </td>
+                        <td class="p-4">
+                            <div class="text-sm text-gray-700"><?php echo date('M d, Y H:i', strtotime($row['login_time'])); ?></div>
+                            <div class="text-xs text-gray-500"><?php echo htmlspecialchars($row['geo_location']); ?> • <?php echo htmlspecialchars($row['time_category']); ?></div>
+                        </td>
+                        <td class="p-4 font-mono font-bold text-red-600">
+                            <?php echo number_format($row['anomaly_score'], 4); ?>
+                        </td>
+                    </tr>
+                    <?php 
+                        endwhile;
+                    else:
+                    ?>
+                    <tr>
+                        <td colspan="4" class="p-4 text-center text-gray-500">No anomalous logins detected</td>
+                    </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
     
     <!-- Coming Soon -->

@@ -12,10 +12,10 @@ $auth = new Auth($db);
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
 
-// Check authentication
-if (!$auth->isLoggedIn()) {
+// Check authentication and role
+if (!$auth->isLoggedIn() || !$auth->hasRole('customer')) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized action']);
     exit();
 }
 
@@ -33,23 +33,29 @@ if ($method === 'POST' && $action === 'add') {
     }
     
     // Check if already in cart
-    $stmt = $db->prepare("SELECT id FROM cart WHERE customer_id = ? AND product_id = ?");
+    $stmt = $db->prepare("SELECT id, quantity FROM cart WHERE customer_id = ? AND product_id = ?");
     $stmt->bind_param("ii", $customerId, $productId);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $existingQuantity = (int) $row['quantity'];
+        $newQuantity = $existingQuantity + $quantity;
+
         // Update quantity
-        $stmt = $db->prepare("UPDATE cart SET quantity = quantity + ? WHERE customer_id = ? AND product_id = ?");
-        $stmt->bind_param("iii", $quantity, $customerId, $productId);
+        $stmt = $db->prepare("UPDATE cart SET quantity = ? WHERE customer_id = ? AND product_id = ?");
+        $stmt->bind_param("iii", $newQuantity, $customerId, $productId);
     } else {
+        $newQuantity = $quantity;
+
         // Insert new item
         $stmt = $db->prepare("INSERT INTO cart (customer_id, product_id, quantity) VALUES (?, ?, ?)");
         $stmt->bind_param("iii", $customerId, $productId, $quantity);
     }
     
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Added to cart']);
+        echo json_encode(['success' => true, 'message' => 'Added to cart', 'quantity' => $newQuantity]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to add to cart']);
     }
@@ -95,12 +101,12 @@ elseif ($method === 'POST' && $action === 'remove') {
 }
 
 elseif ($method === 'GET' && $action === 'count') {
-    $stmt = $db->prepare("SELECT COUNT(*) as count FROM cart WHERE customer_id = ?");
+    $stmt = $db->prepare("SELECT COALESCE(SUM(quantity), 0) as count FROM cart WHERE customer_id = ?");
     $stmt->bind_param("i", $customerId);
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
     
-    echo json_encode(['count' => $result['count']]);
+    echo json_encode(['count' => (int) $result['count']]);
 }
 
 else {

@@ -53,6 +53,6 @@ $baseUrl = defined('BASE_URL') ? BASE_URL : getBaseUrl();
     </div>
 </footer>
 
-<script src="<?php echo $baseUrl; ?>/assets/js/main.js"></script>
+<script src="<?php echo $baseUrl; ?>/assets/js/main.js?v=<?php echo time(); ?>"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
  * Payment Page
  */
 
-require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../src/utils/Auth.php';
 
 // payment page doesn't need its own baseUrl; header will define BASE_URL

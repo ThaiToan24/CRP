@@ -65,6 +65,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user['role'] === 'seller') {
     }
 }
 
+// Handle order cancellation (for customer)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cancel_order' && $user['role'] === 'customer') {
+    if ($order['status'] === 'pending' && $order['customer_id'] == $userId) {
+        $stmt = $db->prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?");
+        $stmt->bind_param("i", $orderId);
+        if ($stmt->execute()) {
+            $order['status'] = 'cancelled';
+        }
+    }
+}
+
 $pageTitle = 'Order #' . $orderId . ' - DB eCommerce';
 // $baseUrl provided by header
 ?>
@@ -190,6 +201,16 @@ $pageTitle = 'Order #' . $orderId . ' - DB eCommerce';
                         <option value="cancelled" <?php echo $order['status'] === 'cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                     </select>
                     <button type="submit" class="btn btn-primary w-full">Update Status</button>
+                </form>
+            <?php endif; ?>
+            
+            <!-- Cancel Action (for Customer) -->
+            <?php if ($user['role'] === 'customer' && $order['customer_id'] == $userId && $order['status'] === 'pending'): ?>
+                <form method="POST" class="mt-4" onsubmit="return confirm('Are you sure you want to cancel this order?');">
+                    <input type="hidden" name="action" value="cancel_order">
+                    <button type="submit" class="w-full px-4 py-2 border border-red-500 text-red-500 rounded hover:bg-red-50 transition-colors font-semibold">
+                        Cancel Order
+                    </button>
                 </form>
             <?php endif; ?>
             

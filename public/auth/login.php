@@ -31,7 +31,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
     
-    $result = $auth->login($email, $password);
+    // Collect fingerprint data from hidden inputs
+    $fingerprintData = [
+        'user_agent' => $_POST['f_user_agent'] ?? $_SERVER['HTTP_USER_AGENT'] ?? '',
+        'device_type' => $_POST['f_device_type'] ?? 'Unknown',
+        'typing_speed_ms' => intval($_POST['f_typing_speed'] ?? 0),
+        'response_time_ms' => intval($_POST['f_response_time'] ?? 0),
+        'client_ip' => $_POST['f_client_ip'] ?? '',
+        'precise_location' => $_POST['f_precise_location'] ?? ''
+    ];
+    
+    $result = $auth->login($email, $password, $fingerprintData);
     
         if ($result['success']) {
         $user = $result['user'];
@@ -63,7 +73,15 @@ $pageTitle = 'Login - DB eCommerce';
             </div>
         <?php endif; ?>
         
-        <form method="POST" class="space-y-4">
+        <form method="POST" class="space-y-4" id="loginForm">
+            <!-- Hidden Fingerprint Inputs -->
+            <input type="hidden" name="f_user_agent" id="f_user_agent" value="">
+            <input type="hidden" name="f_device_type" id="f_device_type" value="">
+            <input type="hidden" name="f_typing_speed" id="f_typing_speed" value="0">
+            <input type="hidden" name="f_response_time" id="f_response_time" value="0">
+            <input type="hidden" name="f_client_ip" id="f_client_ip" value="">
+            <input type="hidden" name="f_precise_location" id="f_precise_location" value="">
+
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required>
@@ -81,8 +99,83 @@ $pageTitle = 'Login - DB eCommerce';
             <p>Don't have an account? <a href="register.php" class="text-primary font-bold">Register here</a></p>
         </div>
         
-       
     </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const pageLoadTime = Date.now();
+    let keydownTimes = [];
+    let lastKeydownTime = null;
+
+    // Detect Device Type
+    const ua = navigator.userAgent;
+    let deviceType = "Desktop";
+    if (/Mobi|Android/i.test(ua)) {
+        deviceType = "Mobile";
+    } else if (/Tablet|iPad/i.test(ua)) {
+        deviceType = "Tablet";
+    }
+
+    // Set basic info
+    document.getElementById("f_user_agent").value = ua;
+    document.getElementById("f_device_type").value = deviceType;
+    
+    // Fetch true external IP (useful for localhost testing)
+    fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("f_client_ip").value = data.ip;
+        })
+        .catch(err => console.log('IP fetch failed', err));
+
+    // Request precise GPS location from the browser
+    if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                document.getElementById("f_precise_location").value = lat + "," + lng;
+            },
+            function(error) {
+                console.log("Geolocation denied or unavailable:", error.message);
+                // Fallback to IP logic remains active as f_precise_location stays empty
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    }
+
+    // Track typing speed on email and password fields
+    const inputs = [document.getElementById("email"), document.getElementById("password")];
+    inputs.forEach(input => {
+        if (input) {
+            input.addEventListener("keydown", function(e) {
+                const now = Date.now();
+                if (lastKeydownTime) {
+                    const diff = now - lastKeydownTime;
+                    if (diff < 1000) { // Keep reasonable intervals
+                        keydownTimes.push(diff);
+                    }
+                }
+                lastKeydownTime = now;
+            });
+        }
+    });
+
+    // Calculate metrics on form submission
+    document.getElementById("loginForm").addEventListener("submit", function() {
+        const submitTime = Date.now();
+        const responseTime = submitTime - pageLoadTime;
+        document.getElementById("f_response_time").value = responseTime;
+
+        if (keydownTimes.length > 0) {
+            const sum = keydownTimes.reduce((a, b) => a + b, 0);
+            const avg = Math.round(sum / keydownTimes.length);
+            document.getElementById("f_typing_speed").value = avg;
+        }
+    });
+});
+</script>
 </div>
 
 <?php include __DIR__ . '/../../src/views/footer.php'; ?>

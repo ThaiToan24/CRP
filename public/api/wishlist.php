@@ -12,10 +12,10 @@ $auth = new Auth($db);
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
 
-// Check authentication
-if (!$auth->isLoggedIn()) {
+// Check authentication and role
+if (!$auth->isLoggedIn() || !$auth->hasRole('customer')) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized action']);
     exit();
 }
 

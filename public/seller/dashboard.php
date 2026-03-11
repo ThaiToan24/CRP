@@ -20,9 +20,29 @@ $sellerId = $user['id'];
 
 // Get seller statistics
 $productCount = $db->query("SELECT COUNT(*) as count FROM products WHERE seller_id = $sellerId AND deleted_at IS NULL")->fetch_assoc()['count'];
-$orderCount = $db->query("SELECT COUNT(*) as count FROM orders WHERE seller_id = $sellerId")->fetch_assoc()['count'];
-$totalRevenue = $db->query("SELECT SUM(total_price) as total FROM orders WHERE seller_id = $sellerId AND payment_status = 'paid'")->fetch_assoc()['total'] ?? 0;
-$pendingOrders = $db->query("SELECT COUNT(*) as count FROM orders WHERE seller_id = $sellerId AND status = 'pending'")->fetch_assoc()['count'];
+
+// If our DB schema is missing orders.seller_id (legacy installs), use product join fallback.
+$orderSellerIdColumnCheck = $db->query("SHOW COLUMNS FROM orders LIKE 'seller_id'");
+$orderSellerColumnExists = $orderSellerIdColumnCheck && $orderSellerIdColumnCheck->num_rows > 0;
+
+if ($orderSellerColumnExists) {
+    $orderCount = $db->query("SELECT COUNT(*) as count FROM orders WHERE seller_id = $sellerId")->fetch_assoc()['count'];
+    $totalRevenue = $db->query("SELECT SUM(total_price) as total FROM orders WHERE seller_id = $sellerId AND payment_status = 'paid'")->fetch_assoc()['total'] ?? 0;
+    $pendingOrders = $db->query("SELECT COUNT(*) as count FROM orders WHERE seller_id = $sellerId AND status = 'pending'")->fetch_assoc()['count'];
+} else {
+    $orderCount = $db->query("SELECT COUNT(DISTINCT o.id) AS count FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        JOIN products p ON p.id = oi.product_id
+        WHERE p.seller_id = $sellerId")->fetch_assoc()['count'];
+    $totalRevenue = $db->query("SELECT SUM(DISTINCT o.total_price) AS total FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        JOIN products p ON p.id = oi.product_id
+        WHERE p.seller_id = $sellerId AND o.payment_status = 'paid'")->fetch_assoc()['total'] ?? 0;
+    $pendingOrders = $db->query("SELECT COUNT(DISTINCT o.id) AS count FROM orders o
+        JOIN order_items oi ON oi.order_id = o.id
+        JOIN products p ON p.id = oi.product_id
+        WHERE p.seller_id = $sellerId AND o.status = 'pending'")->fetch_assoc()['count'];
+}
 
 $pageTitle = 'Seller Dashboard - DB eCommerce';
 // baseUrl available via header constant

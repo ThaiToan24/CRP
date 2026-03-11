@@ -98,8 +98,8 @@ $pageTitle = 'Home - DB eCommerce';
                                 By <?php echo htmlspecialchars($product['seller_name']); ?>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="addToCart(<?php echo $product['id']; ?>)" class="btn btn-primary flex-1 text-sm">
-                                    Add to Cart
+                                <button onclick="addToCart(<?php echo $product['id']; ?>, 1, true)" class="btn btn-primary flex-1 text-sm">
+                                    🛒 Buy Now
                                 </button>
                             </div>
                         </div>
@@ -131,8 +131,8 @@ $pageTitle = 'Home - DB eCommerce';
                                 By <?php echo htmlspecialchars($product['seller_name']); ?>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="addToCart(<?php echo $product['id']; ?>)" class="btn btn-primary flex-1 text-sm">
-                                    Add
+                                <button onclick="addToCart(<?php echo $product['id']; ?>, 1, true)" class="btn btn-primary flex-1 text-sm">
+                                    🛒 Buy Now
                                 </button>
                                 <button onclick="addToWishlist(<?php echo $product['id']; ?>)" class="btn btn-outline flex-1 text-sm">
                                     ♡

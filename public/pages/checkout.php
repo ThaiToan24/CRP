@@ -49,7 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $shippingAddress = $_POST['shipping_address'] ?? '';
     $paymentMethod = $_POST['payment_method'] ?? 'cod';
     $notes = $_POST['notes'] ?? '';
-    
+
+    $ordersNotesCol = $db->query("SHOW COLUMNS FROM `orders` LIKE 'notes'");
+    $ordersNotesExists = $ordersNotesCol && $ordersNotesCol->num_rows > 0;
+
     // Validate
     if (empty($customerName) || empty($customerPhone) || empty($shippingAddress)) {
         $error = 'All required fields must be filled';
@@ -74,20 +77,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Create order
-            $stmt = $db->prepare("INSERT INTO orders (customer_id, seller_id, total_price, payment_method, 
-                                                       customer_name, customer_phone, shipping_address, notes) 
-                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("iidssss", $customerId, $sellerId, $totalPrice, $paymentMethod, 
-                            $customerName, $customerPhone, $shippingAddress, $notes);
-            
+            if ($ordersNotesExists) {
+                $stmt = $db->prepare("INSERT INTO orders (customer_id, seller_id, total_price, payment_method, 
+                                                           customer_name, customer_phone, shipping_address, notes) 
+                                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("iidsssss", $customerId, $sellerId, $totalPrice, $paymentMethod, 
+                                $customerName, $customerPhone, $shippingAddress, $notes);
+            } else {
+                // Fallback for older schema that does not yet have notes column
+                $stmt = $db->prepare("INSERT INTO orders (customer_id, seller_id, total_price, payment_method, 
+                                                           customer_name, customer_phone, shipping_address) 
+                                      VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("iidssss", $customerId, $sellerId, $totalPrice, $paymentMethod, 
+                                $customerName, $customerPhone, $shippingAddress);
+            }
+
             if ($stmt->execute()) {
                 $orderId = $db->insert_id;
                 
+                // If old schema has no unit_price, insert only basic order_items columns.
+                $orderItemUnitPriceCol = $db->query("SHOW COLUMNS FROM order_items LIKE 'unit_price'");
+                $orderItemUnitPriceExists = $orderItemUnitPriceCol && $orderItemUnitPriceCol->num_rows > 0;
+
                 // Create order items
                 foreach ($items as $item) {
-                    $stmt = $db->prepare("INSERT INTO order_items (order_id, product_id, quantity, unit_price) 
-                                          VALUES (?, ?, ?, ?)");
-                    $stmt->bind_param("iiii", $orderId, $item['product_id'], $item['quantity'], $item['price']);
+                    if ($orderItemUnitPriceExists) {
+                        $stmt = $db->prepare("INSERT INTO order_items (order_id, product_id, quantity, unit_price) 
+                                              VALUES (?, ?, ?, ?)");
+                        $stmt->bind_param("iiii", $orderId, $item['product_id'], $item['quantity'], $item['price']);
+                    } else {
+                        $stmt = $db->prepare("INSERT INTO order_items (order_id, product_id, quantity) 
+                                              VALUES (?, ?, ?)");
+                        $stmt->bind_param("iii", $orderId, $item['product_id'], $item['quantity']);
+                    }
                     $stmt->execute();
                     
                     // Update product stock

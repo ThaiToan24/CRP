@@ -21,9 +21,14 @@ function getBaseUrl() {
     if ($pos !== false) {
         $path = substr($script, 0, $pos + 7);
     } else {
-        $path = '/public';
+        $dir = dirname($script);
+        if ($dir === '/' || $dir === '\\') {
+            $path = '/public';
+        } else {
+            $path = rtrim($dir, '\\/') . '/public';
+        }
     }
-    $base = $protocol . '://' . $host . $path;
+    $base = rtrim($protocol . '://' . $host . $path, '/');
     return $base;
 }
 
